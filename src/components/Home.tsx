@@ -1,7 +1,8 @@
-import React, { FunctionComponent, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 
-import { Box, Paper, Typography } from '@mui/material'
+import { Box, Paper, Typography, Button } from '@mui/material'
 import Navbar from './Navbar'
+
 declare global {
   interface Window {
     aiware: any
@@ -10,21 +11,32 @@ declare global {
 
 const Home: React.FC = () => {
   window.aiware = window.aiware || {}
+  const [file, setFile] = useState(null)
+
+  // To obtain this token, login to https://login.stage.veritone.com/
+  // open developer tools and go to:
+  //
+  // "Application" tab
+  // -> "Cookies", under Storage panel
+  // -> "admin.stage.us-1.veritone.com"
+  //
+  // From the list, select "stage-veritone-session-id"
+  // -> copy the uuid displayed in the "Cookie Value" panel.
 
   useEffect(() => {
     window.aiware.init(
       {
-        baseUrl: VERITONE_ENVIRONMENT_GQL_URL,
+        baseUrl: 'https://api.stage.us-1.veritone.com/v3/graphql',
         applicationId: 'app-123',
         withAuth: true,
-        authToken: token,
+        authToken: '0fd8d3c8-aaa9-48dd-a827-aa49360fc0e9',
       },
       function () {
         window.aiware.mountWidget({
           name: 'APP_BAR',
           elementId: 'app-bar',
           config: {
-            title: 'Tony Onboarding',
+            title: 'Onboarding',
             backgroundColor: '#1f2937',
           },
         })
@@ -55,6 +67,36 @@ const Home: React.FC = () => {
     )
   }, [])
 
+  const handleUpload = () => {
+    const microFrontend = {
+      name: 'DATA_CENTER_IMPORTER',
+      config: {
+        name: 'Local Importer',
+      },
+    }
+
+    const panelConfig = {
+      type: 'APP_BAR_PANEL_TEMPLATE',
+      marginTop: 55,
+      marginStart: 0,
+      size: 'large',
+      zIndex: 1000,
+      dimmed: 0,
+    }
+    setTimeout(() => {
+      window.aiware.mountPanel({
+        panelId: 'DATA_CENTER_IMPORTER',
+        microFrontend: microFrontend,
+        panelConfig: panelConfig,
+      })
+    }, 0)
+    setTimeout(() => {
+      console.log('Click browse button')
+      // document.querySelector(`[data-test="data-center-importer-local-upload-button"]`).click()
+    }, 1)
+  }
+
+  console.log('File', file)
   return (
     <>
       <Navbar />
@@ -73,6 +115,10 @@ const Home: React.FC = () => {
             Starter App
           </Typography>
         </Paper>
+        <Paper>
+          <Button onClick={handleUpload}>upload file</Button>
+        </Paper>
+        <Paper></Paper>
       </Box>
     </>
   )
