@@ -5,7 +5,6 @@ import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin'
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin'
 import { Configuration as WebpackDevServerConfiguration } from 'webpack-dev-server'
 
-
 const webpackConfig = (): Configuration => ({
   entry: './src/index.tsx',
   // ...(process.env.production || !process.env.development
@@ -51,7 +50,7 @@ const webpackConfig = (): Configuration => ({
     new DefinePlugin({
       'process.env': process.env.production || !process.env.development,
     }),
-    new ForkTsCheckerWebpackPlugin({})
+    new ForkTsCheckerWebpackPlugin({}),
   ],
 })
 
