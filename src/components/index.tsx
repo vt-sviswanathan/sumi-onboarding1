@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import Axios from "axios"
-import { Button, Container, Stack} from '@mui/material'
-import {styled} from '@mui/material/styles'
+import Axios from 'axios'
+import { Button, Container, Stack } from '@mui/material'
+import { styled } from '@mui/material/styles'
 import Navbar from './Navbar'
-import Definition from "./Definition";
+import Definition from './Definition'
+import Modal from './Modal'
 
 declare global {
   interface Window {
@@ -14,28 +15,31 @@ declare global {
 export const UploadBtn = styled(Button)({
   height: '50px',
   border: '1px solid #42BCB6',
-  fontSize: '20px',
   margin: '20px auto',
   display: 'block',
-  backgroundColor: '#4db6ac'
+  backgroundColor: '#59D4CE',
+  '&:hover': {
+    backgroundColor: '#35938E',
+  },
 })
 
 export const DefinitionBtn = styled(Button)({
   height: '50px',
   border: '1px solid #42BCB6',
-  fontSize: '20px',
   margin: '20px auto !important',
   display: 'block',
-  backgroundColor: '#4db6ac'
+  backgroundColor: '#59D4CE',
+  '&:hover': {
+    backgroundColor: '#35938E',
+  },
 })
-
-
 
 const Index: React.FC = () => {
   window.aiware = window.aiware || {}
   const [file, setFile] = useState(null)
   const [dictionaryResponse, setDictionaryResponse] = useState(null)
   const [word, setWord] = useState('mask')
+  const [modalOpen, setModalOpen] = useState(false)
 
   // To obtain this token, login to https://login.stage.veritone.com/
   // open developer tools and go to:
@@ -53,7 +57,7 @@ const Index: React.FC = () => {
         baseUrl: 'https://api.stage.us-1.veritone.com/v3/graphql',
         applicationId: 'app-123',
         withAuth: true,
-        authToken: 'b6b0f810-3f88-43bb-8b42-81347ba89814',
+        authToken: '740bcbd1-b8cd-4367-bff6-6ee4a0a66bf2',
       },
       function () {
         window.aiware.mountWidget({
@@ -74,17 +78,17 @@ const Index: React.FC = () => {
           console.log(file)
           setTimeout(() => {
             setFile(file)
-            console.log("1111111", file)
-            const cancel =  document.querySelector(`[data-test="data-center-importer-cancel-btn"]`) as HTMLButtonElement | null
-            if( cancel != null) {
-              console.log(cancel.innerText)
-              cancel.click()
-            }
-            const confirmCancel = document.querySelector(`[data-test="data-center-importer-dialog-confirm-close-btn"]`) as HTMLButtonElement | null
-            if( confirmCancel !== null) {
-              console.log("Confirm")
-              confirmCancel.click()
-            }
+            console.log('1111111', file)
+            // const cancel =  document.querySelector(`[data-test="data-center-importer-cancel-btn"]`) as HTMLButtonElement | null
+            // if( cancel != null) {
+            //   console.log(cancel.innerText)
+            //   cancel.click()
+            // }
+            // const confirmCancel = document.querySelector(`[data-test="data-center-importer-dialog-confirm-close-btn"]`) as HTMLButtonElement | null
+            // if( confirmCancel !== null) {
+            //   console.log("Confirm")
+            //   confirmCancel.click()
+            // }
             console.log('Closing Importer panel')
           }, 500)
         })
@@ -127,7 +131,7 @@ const Index: React.FC = () => {
     }, 0)
     setTimeout(() => {
       console.log('Click browse button')
-         // document.querySelector(`[data-test="data-center-importer-local-upload-button"]`).click()
+      // document.querySelector(`[data-test="data-center-importer-local-upload-button"]`).click()
     }, 1)
   }
 
@@ -135,41 +139,63 @@ const Index: React.FC = () => {
 
   const wordSubmit = () => {
     Axios.get(
-        `https://www.dictionaryapi.com/api/v3/references/collegiate/json/${word}?key=851546ba-e972-4cc3-89f2-71ffc1ecfbe3`
-    ).then((response) => {
+      `https://www.dictionaryapi.com/api/v3/references/collegiate/json/${word}?key=851546ba-e972-4cc3-89f2-71ffc1ecfbe3`
+    ).then(response => {
       // setData(response.data[0]);
-      console.log("response ===", response)
-      if (response.status === 200 ) {
+      console.log('response ===', response)
+      if (response.status === 200) {
         setDictionaryResponse(response)
+        setModalOpen(true)
       } else {
-        console.log("Something went wrong")
+        console.log('Something went wrong')
       }
-    });
+    })
+  }
+
+  const closeModal = () => {
+    console.log("I am in close modal", modalOpen)
+    setModalOpen(!modalOpen)
   }
 
   return (
-    <div id={"home"}>
-      <div className="bgContainer">
+    <div id={'home'}>
+      <div className={!dictionaryResponse && 'backgroundImage'}>
         <Container>
-        <Navbar />
-        <div className="btnWrapper">
-          <Stack
-              direction="column"
-              spacing={2}
-          >
-            {!dictionaryResponse &&
-                <UploadBtn onClick={handleUpload} variant="outlined" >upload file</UploadBtn>
-            }
-            {(word && !dictionaryResponse ) &&
-                <DefinitionBtn onClick={wordSubmit} variant="outlined"  >
-                  Click to see the definition of the {word}
-                </DefinitionBtn>
-            }
-            {dictionaryResponse &&
-                <Definition word={word} dictionaryResponse={dictionaryResponse}/>
-            }
-          </Stack>
-        </div>
+          <Navbar />
+          <div className="btnWrapper">
+            <Stack direction="column" spacing={2}>
+              {!dictionaryResponse ? (
+                <>
+                  <UploadBtn onClick={handleUpload} variant="outlined">
+                    upload file
+                  </UploadBtn>
+                  {word && (
+                    <DefinitionBtn onClick={wordSubmit} variant="outlined">
+                      Click to see the definition of the {word}
+                    </DefinitionBtn>
+                  )}
+                </>
+              ) : (
+                <Modal
+                  word={word}
+                  dictionaryResponse={dictionaryResponse}
+                  modalOpen={modalOpen}
+                  closeModal={closeModal}
+                />
+              )}
+              {/*{dictionaryResponse &&*/}
+              {/*    <Definition word={word} dictionaryResponse={dictionaryResponse}/>*/}
+              {/*}*/}
+              {/*{dictionaryResponse && (*/}
+              {/*  <Modal*/}
+              {/*    word={word}*/}
+              {/*    dictionaryResponse={dictionaryResponse}*/}
+              {/*    modalOpen={modalOpen}*/}
+              {/*    closeModal={closeModal}*/}
+              {/*  />*/}
+              {/*)}*/}
+            </Stack>
+          </div>
           {/*{ file && file.getUrl ?*/}
           {/*    <audio*/}
           {/*        className="audio-player"*/}
