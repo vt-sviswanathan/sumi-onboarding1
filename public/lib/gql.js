@@ -1,4 +1,4 @@
-(function (global) {
+;(function (global) {
   /**
    * The `gql` function. Runs http requests against to the base url
    * which is provided in the aiware.js' init config.

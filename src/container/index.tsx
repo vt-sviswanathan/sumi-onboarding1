@@ -1,10 +1,17 @@
 import React, { useEffect, useState } from 'react'
 import Axios from 'axios'
-import { Button, Container, Stack } from '@mui/material'
-import { styled } from '@mui/material/styles'
-import Navbar from './Navbar'
-import Definition from './Definition'
-import Modal from './Modal'
+import { Container, Stack } from '@mui/material'
+import Navbar from '../components/Navbar'
+import Modal from '../components/Modal'
+import { UploadBtn, TransBtn, DefinitionBtn } from '../components/Butons'
+import {
+  startEngine,
+  jobStatus,
+  jobResults,
+  generateAudioJobResults,
+  parseAudioJobResults,
+} from '../api'
+import { TOKEN, GRAPHQL_URL } from '../../config'
 
 declare global {
   interface Window {
@@ -12,59 +19,30 @@ declare global {
   }
 }
 
-export const UploadBtn = styled(Button)({
-  height: '50px',
-  border: '1px solid #42BCB6',
-  margin: '20px auto',
-  display: 'block',
-  backgroundColor: '#59D4CE',
-  '&:hover': {
-    backgroundColor: '#35938E',
-  },
-})
-
-export const DefinitionBtn = styled(Button)({
-  height: '50px',
-  border: '1px solid #42BCB6',
-  margin: '20px auto !important',
-  display: 'block',
-  backgroundColor: '#59D4CE',
-  '&:hover': {
-    backgroundColor: '#35938E',
-  },
-})
-
 const Index: React.FC = () => {
   window.aiware = window.aiware || {}
   const [file, setFile] = useState(null)
   const [dictionaryResponse, setDictionaryResponse] = useState(null)
   const [word, setWord] = useState('mask')
   const [modalOpen, setModalOpen] = useState(false)
-
-  // To obtain this token, login to https://login.stage.veritone.com/
-  // open developer tools and go to:
-  //
-  // "Application" tab
-  // -> "Cookies", under Storage panel
-  // -> "admin.stage.us-1.veritone.com"
-  //
-  // From the list, select "stage-veritone-session-id"
-  // -> copy the uuid displayed in the "Cookie Value" panel.
+  const [isFinished, setIsFinished] = useState(false)
+  const [transcribeDuration, setTranscribeDuration] = useState(0)
+  const timer = 3500
 
   useEffect(() => {
     window.aiware.init(
       {
-        baseUrl: 'https://api.stage.us-1.veritone.com/v3/graphql',
+        baseUrl: GRAPHQL_URL,
         applicationId: 'app-123',
         withAuth: true,
-        authToken: '740bcbd1-b8cd-4367-bff6-6ee4a0a66bf2',
+        authToken: TOKEN,
       },
       function () {
         window.aiware.mountWidget({
           name: 'APP_BAR',
           elementId: 'app-bar',
           config: {
-            title: 'Onboarding',
+            title: 'Transcribe',
             backgroundColor: '#1f2937',
           },
         })
@@ -78,7 +56,6 @@ const Index: React.FC = () => {
           console.log(file)
           setTimeout(() => {
             setFile(file)
-            console.log('1111111', file)
             // const cancel =  document.querySelector(`[data-test="data-center-importer-cancel-btn"]`) as HTMLButtonElement | null
             // if( cancel != null) {
             //   console.log(cancel.innerText)
@@ -137,12 +114,71 @@ const Index: React.FC = () => {
 
   console.log('File', file)
 
+  const handleTranscribe = () => {
+    startEngine(file).then(response => {
+      console.log('response =====', response)
+      const jobId = response.data.launchSingleEngineJob.id
+      const targetId = response.data.launchSingleEngineJob.targetId
+      pollStatus(targetId, jobId)
+    })
+  }
+
+  const pollStatus = (targetId, jobId) => {
+    // let counter = 0;
+    const poll = setInterval(async () => {
+      // counter += timer
+      const resJobStatus = await jobStatus(targetId, jobId)
+      console.log("test ===== resjobstatus", resJobStatus)
+
+      const { status } = resJobStatus.data.temporalDataObject.jobs.records[0]
+      if (status === 'complete') {
+        console.log('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& complete', {status})
+      } else {
+        console.log('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& not complete', {status})
+      }
+      // jobStatus(targetId, jobId).then(res => {
+      //   const { status } = res.data.temporalDataObject.jobs.records[0]
+      //   console.log('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&', {status})
+      //
+      //   if (status === 'complete') {
+      //     clearInterval(poll)
+      //     jobResults(targetId).then(res => {
+      //       console.log('))))))))))))))))))))))))))))))))))))')
+      //       const parsedResults = generateAudioJobResults(
+      //         parseAudioJobResults(res)
+      //       )
+      //       setIsFinished(true)
+      //       // setTranscribeDuration(counter);
+      //       // setResults({
+      //       //   ...parsedResults,
+      //       //   tdoIdQuery,
+      //       //   jobIdQuery,
+      //       //   transcribeDuration: counter,
+      //       // });
+      //       // setObject(parsedResults.found);
+      //       console.log('parsedResults ----', parsedResults)
+      //     })
+      //     // } else if (counter >= API_TIMEOUT_DURATION) {
+      //     //   clearInterval(poll);
+      //     //   console.log(
+      //     //       "The API engine did not finish before timeout. Displaying error."
+      //     //   );
+      //     //   setIsReqTimedOut(true);
+      //     //   setIsRunning(false);
+      //     //   setIsFinished(false);
+      //     // }
+      //   } else if (counter >= timer) {
+      //   clearInterval(poll)
+      //     console.log('Testing if the job status is done', {counter, timer})
+      //   }
+      // })
+    }, timer)
+  }
+
   const wordSubmit = () => {
     Axios.get(
       `https://www.dictionaryapi.com/api/v3/references/collegiate/json/${word}?key=851546ba-e972-4cc3-89f2-71ffc1ecfbe3`
     ).then(response => {
-      // setData(response.data[0]);
-      console.log('response ===', response)
       if (response.status === 200) {
         setDictionaryResponse(response)
         setModalOpen(true)
@@ -153,7 +189,6 @@ const Index: React.FC = () => {
   }
 
   const closeModal = () => {
-    console.log("I am in close modal", modalOpen)
     setModalOpen(!modalOpen)
   }
 
@@ -169,6 +204,9 @@ const Index: React.FC = () => {
                   <UploadBtn onClick={handleUpload} variant="outlined">
                     upload file
                   </UploadBtn>
+                  <TransBtn onClick={handleTranscribe} variant={'outlined'}>
+                    Transcribe audio to text
+                  </TransBtn>
                   {word && (
                     <DefinitionBtn onClick={wordSubmit} variant="outlined">
                       Click to see the definition of the {word}
@@ -183,17 +221,6 @@ const Index: React.FC = () => {
                   closeModal={closeModal}
                 />
               )}
-              {/*{dictionaryResponse &&*/}
-              {/*    <Definition word={word} dictionaryResponse={dictionaryResponse}/>*/}
-              {/*}*/}
-              {/*{dictionaryResponse && (*/}
-              {/*  <Modal*/}
-              {/*    word={word}*/}
-              {/*    dictionaryResponse={dictionaryResponse}*/}
-              {/*    modalOpen={modalOpen}*/}
-              {/*    closeModal={closeModal}*/}
-              {/*  />*/}
-              {/*)}*/}
             </Stack>
           </div>
           {/*{ file && file.getUrl ?*/}
