@@ -31,6 +31,7 @@ export const launchSingleEngineJob = (file_getUrl) => {
 }
 
 export const postGraphQlQuery = async (query) => {
+    console.log("query -------", query)
     try {
         const response = await window.gql(query.queryString)
 

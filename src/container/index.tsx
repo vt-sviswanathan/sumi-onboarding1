@@ -23,11 +23,25 @@ const Index: React.FC = () => {
   window.aiware = window.aiware || {}
   const [file, setFile] = useState(null)
   const [dictionaryResponse, setDictionaryResponse] = useState(null)
-  const [word, setWord] = useState('mask')
+  const [word, setWord] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [isFinished, setIsFinished] = useState(false)
   const [transcribeDuration, setTranscribeDuration] = useState(0)
+  const [scanBtn, setScanBtn] = useState(false)
+  // const [result, setResult] = useState(null)
   const timer = 3500
+
+  //Testing PlayStation PlayStation PlayStation PlayStation test one two three
+ const result = 'Testing PlayStation PlayStation PlayStation PlayStation test one two three'
+  // var str = "This is an simple sentence.";
+  const singlwWords = result.split(" ");
+  console.log(singlwWords);
+  if(singlwWords) {
+      singlwWords.map((item, index) => {
+          console.log({item})
+      })
+  }
+
 
   useEffect(() => {
     window.aiware.init(
@@ -53,20 +67,22 @@ const Index: React.FC = () => {
             throw error
           }
 
-          console.log(file)
           setTimeout(() => {
             setFile(file)
-            // const cancel =  document.querySelector(`[data-test="data-center-importer-cancel-btn"]`) as HTMLButtonElement | null
-            // if( cancel != null) {
-            //   console.log(cancel.innerText)
-            //   cancel.click()
-            // }
-            // const confirmCancel = document.querySelector(`[data-test="data-center-importer-dialog-confirm-close-btn"]`) as HTMLButtonElement | null
-            // if( confirmCancel !== null) {
-            //   console.log("Confirm")
-            //   confirmCancel.click()
-            // }
-            console.log('Closing Importer panel')
+            const cancel = document.querySelector(
+              `[data-test="data-center-importer-cancel-btn"]`
+            ) as HTMLButtonElement | null
+            if (cancel != null) {
+              cancel.click()
+            }
+            const confirmCancel = document.querySelector(
+              `[data-test="data-center-importer-dialog-confirm-close-btn"]`
+            ) as HTMLButtonElement | null
+            if (confirmCancel !== null) {
+              confirmCancel.click()
+            }
+            console.log('File test test test test ', file)
+            setScanBtn(true)
           }, 500)
         })
         window.aiware.on(
@@ -76,7 +92,7 @@ const Index: React.FC = () => {
               alert('Error during the file upload!')
               throw error
             }
-            console.log('Progress: ', file)
+            // console.log('Progress: 1111111111111 ', file)
           }
         )
       }
@@ -106,73 +122,46 @@ const Index: React.FC = () => {
         panelConfig: panelConfig,
       })
     }, 0)
-    setTimeout(() => {
-      console.log('Click browse button')
-      // document.querySelector(`[data-test="data-center-importer-local-upload-button"]`).click()
-    }, 1)
   }
-
-  console.log('File', file)
 
   const handleTranscribe = () => {
-    startEngine(file).then(response => {
-      console.log('response =====', response)
-      const jobId = response.data.launchSingleEngineJob.id
-      const targetId = response.data.launchSingleEngineJob.targetId
-      pollStatus(targetId, jobId)
-    })
+    startEngine(file)
+      .then(response => {
+        const id = response.data.launchSingleEngineJob.id
+        const targetId = response.data.launchSingleEngineJob.targetId
+        console.log('response =====', { response, targetId, id })
+
+        pollStatus(targetId, id)
+      })
+      .catch(err => {
+        console.log(err)
+      })
   }
 
-  const pollStatus = (targetId, jobId) => {
+  const pollStatus = (tdoId, id) => {
     // let counter = 0;
-    const poll = setInterval(async () => {
-      // counter += timer
-      const resJobStatus = await jobStatus(targetId, jobId)
-      console.log("test ===== resjobstatus", resJobStatus)
+    const poll = setInterval(() => {
+      // counter += API_POLL_FREQUENCY;
+      jobStatus(tdoId, id).then(res => {
+        const { status } = res.data.temporalDataObject.jobs.records[0]
+        if (status === 'complete') {
+          clearInterval(poll)
 
-      const { status } = resJobStatus.data.temporalDataObject.jobs.records[0]
-      if (status === 'complete') {
-        console.log('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& complete', {status})
-      } else {
-        console.log('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& not complete', {status})
-      }
-      // jobStatus(targetId, jobId).then(res => {
-      //   const { status } = res.data.temporalDataObject.jobs.records[0]
-      //   console.log('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&', {status})
-      //
-      //   if (status === 'complete') {
-      //     clearInterval(poll)
-      //     jobResults(targetId).then(res => {
-      //       console.log('))))))))))))))))))))))))))))))))))))')
-      //       const parsedResults = generateAudioJobResults(
-      //         parseAudioJobResults(res)
-      //       )
-      //       setIsFinished(true)
-      //       // setTranscribeDuration(counter);
-      //       // setResults({
-      //       //   ...parsedResults,
-      //       //   tdoIdQuery,
-      //       //   jobIdQuery,
-      //       //   transcribeDuration: counter,
-      //       // });
-      //       // setObject(parsedResults.found);
-      //       console.log('parsedResults ----', parsedResults)
-      //     })
-      //     // } else if (counter >= API_TIMEOUT_DURATION) {
-      //     //   clearInterval(poll);
-      //     //   console.log(
-      //     //       "The API engine did not finish before timeout. Displaying error."
-      //     //   );
-      //     //   setIsReqTimedOut(true);
-      //     //   setIsRunning(false);
-      //     //   setIsFinished(false);
-      //     // }
-      //   } else if (counter >= timer) {
-      //   clearInterval(poll)
-      //     console.log('Testing if the job status is done', {counter, timer})
-      //   }
-      // })
-    }, timer)
+          jobResults(id).then(res => {
+            console.log('parseAudioJobResults ------', res)
+
+            const parsedResults = generateAudioJobResults(
+              parseAudioJobResults(res)
+            )
+
+            console.log('REsult REsult Result', parsedResults)
+            // needed this
+            // setResult(parsedResults)
+            setIsFinished(true)
+          })
+        }
+      })
+    }, 3500)
   }
 
   const wordSubmit = () => {
@@ -201,12 +190,15 @@ const Index: React.FC = () => {
             <Stack direction="column" spacing={2}>
               {!dictionaryResponse ? (
                 <>
-                  <UploadBtn onClick={handleUpload} variant="outlined">
-                    upload file
-                  </UploadBtn>
-                  <TransBtn onClick={handleTranscribe} variant={'outlined'}>
-                    Transcribe audio to text
-                  </TransBtn>
+                  {!scanBtn ? (
+                    <UploadBtn onClick={handleUpload} variant="outlined">
+                      upload file
+                    </UploadBtn>
+                  ) : (
+                    <TransBtn onClick={handleTranscribe} variant={'outlined'}>
+                      Transcribe audio to text
+                    </TransBtn>
+                  )}
                   {word && (
                     <DefinitionBtn onClick={wordSubmit} variant="outlined">
                       Click to see the definition of the {word}
@@ -221,6 +213,22 @@ const Index: React.FC = () => {
                   closeModal={closeModal}
                 />
               )}
+              {result && <div className="finalResults">{result}</div>}
+                <div style={{display: 'flex'}}>
+
+                {
+                    singlwWords.map((item, index) => {
+                       return  <button key ={index}
+                       style={{
+                           border: 'none',
+                           backgroundColor: "transparent",
+                           cursor:'pointer'
+                       }}
+                        onClick={closeModal}
+                       > {item}</button>
+                    })
+                }
+                </div>
             </Stack>
           </div>
           {/*{ file && file.getUrl ?*/}

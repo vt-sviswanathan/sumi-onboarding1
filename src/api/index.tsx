@@ -19,39 +19,47 @@ export const startEngine = async file => {
   return response
 }
 
-export const jobStatus = async (targetId, jobId) => {
-  const jobStatusQuery = checkingStatusQuery(targetId)
+export const jobStatus = async (tdoId, id) => {
+  console.log("target id --------", {tdoId, id})
+
+  const jobStatusQuery = checkingStatusQuery(tdoId)
   const response = await postGraphQlQuery(jobStatusQuery)
   console.log('DAta sfter th job status ===', response)
   return response
 }
 
-export const jobResults = async targetId => {
-  const engineStatusQuery = engineResultsQuery(targetId)
+export const jobResults = async (id) => {
+  const engineStatusQuery = engineResultsQuery(id)
   const data = await postGraphQlQuery(engineStatusQuery)
   console.log('Response received')
+  console.log("Response getAudioJobResults ----", data)
+
   return data
 }
 
 export const parseAudioJobResults = response => {
+  console.log("parseAudioJobResults ------", response)
   const { series } = response.data.engineResults.records[0].jsondata
   const words = []
   series.forEach(word => {
     words.push(word?.words[0]?.word)
   })
+  console.log("words", words)
   return words
-    .join(' ')
-    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
-    .trim()
+  // return words
+  //   .join(' ')
+  //   .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+  //   .trim()
 }
 
 export const generateAudioJobResults = text => {
+  console.log("generateAudioJobResults ------", text)
   const textWordArray = text.toLowerCase().split(' ')
   const results = {
     text,
     length: textWordArray.length,
   }
-  console.log('results', results, text)
+  console.log('results +++++++++++++++++++++++', results, text)
 
   return results
 }
