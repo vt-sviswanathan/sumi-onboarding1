@@ -54,12 +54,14 @@ export const parseAudioJobResults = response => {
 
 export const generateAudioJobResults = text => {
   console.log("generateAudioJobResults ------", text)
-  const textWordArray = text.toLowerCase().split(' ')
-  const results = {
-    text,
-    length: textWordArray.length,
-  }
-  console.log('results +++++++++++++++++++++++', results, text)
+  // const textWordArray = text.toLowerCase().split(' ')
+  // const results = {
+  //   text,
+  //   length: textWordArray.length,
+  // }
 
-  return results
+  // console.log('results +++++++++++++++++++++++', results, text)
+
+  // return results
+  return text
 }

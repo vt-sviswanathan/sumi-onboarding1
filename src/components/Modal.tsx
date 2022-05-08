@@ -6,6 +6,7 @@ import CloseIcon from '@mui/icons-material/Close'
 type Props = {
   word: string
   dictionaryResponse: any
+  spanishDictionaryResponse: any
   modalOpen: boolean
   closeModal: any
 }
@@ -16,7 +17,10 @@ const Modal: FC<Props> = ({
   modalOpen,
   closeModal,
 }) => {
-  const data = dictionaryResponse.length !== 0 ? dictionaryResponse.data : ''
+  console.log("Modal    ---")
+  console.log("Modal    --- word", {word, dictionaryResponse})
+
+  const data = dictionaryResponse
   console.log('def. data. shortdef data', data)
 
   return (
